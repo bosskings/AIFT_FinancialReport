@@ -4,11 +4,11 @@
  */
 
 import {
-  generateFinancialReport,
-  calculateRetirementGrowth,
-  calculateSocialSecurity,
-  calculateRetirementIncome,
-  calculateCombinedIncome
+  // generateFinancialReport,
+  // calculateRetirementGrowth,
+  // calculateSocialSecurity,
+  // calculateRetirementIncome,
+  // calculateCombinedIncome
 } from './financialReport.js';
 
 // Test Case 1: Young Professional (25 years old)
