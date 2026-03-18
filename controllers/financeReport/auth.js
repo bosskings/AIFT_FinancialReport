@@ -3,18 +3,25 @@ import jwt from 'jsonwebtoken';
 
 // User Registration
 const signUp = async (req, res) => {
+
     try {
         const { fullname, email, password } = req.body;
 
         // Basic validation
         if (!fullname || !email || !password) {
-            return res.status(400).json({ success: false, message: "Full name, email, and password are required." });
+            return res.status(400).json({ 
+                status: "FAILED", 
+                message: "Full name, email, and password are required." 
+            });
         }
 
         // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(409).json({ success: false, message: "User with this email already exists." });
+            return res.status(409).json({ 
+                status: "FAILED", 
+                message: "User with this email already exists." 
+            });
         }
 
         // Create user (Note: password should be hashed in real implementation)
@@ -22,8 +29,11 @@ const signUp = async (req, res) => {
         await user.save();
 
         // JWT Generation
-        const token = jwt.sign(
-            { userId: user._id, email: user.email, fullname: user.fullname },
+        const token = jwt.sign({ 
+                userId: user._id, 
+                email: user.email, 
+                fullname: user.fullname 
+            },
             process.env.JWT_SECRET || "wintriceSecretKey",
             { expiresIn: '7d' }
         );
@@ -42,7 +52,7 @@ const signUp = async (req, res) => {
     } catch (error) {
         console.error('User registration error:', error);
         return res.status(500).json({ 
-            status: "ERROR", 
+            status: "FAILED", 
             message: "Internal server error."+error 
         });
     }

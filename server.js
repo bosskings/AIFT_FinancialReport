@@ -1,6 +1,10 @@
+import mongoose from "mongoose";
 import express from "express";
-import financeRouter from "./routes/finance/financialReport.js"
 import cors from "cors";
+import dotenv from "dotenv";
+
+import financeRouter from "./routes/finance/financialReport.js"
+dotenv.config();
 
 
 const app = express()
@@ -19,6 +23,13 @@ app.get('/', (req, res)=>{
 })
 
 
-app.listen(4500, ()=>{
-    console.log('sever is running on port 4500');
+
+mongoose.connect(process.env.MONGO_URI).then(() => {
+    console.log('Connected to MongoDB');
+    app.listen(4500, () => {
+        console.log('Server is running on port 4500');
+    });
 })
+.catch((error) => {
+    console.error('Failed to connect to MongoDB:', error);
+});
