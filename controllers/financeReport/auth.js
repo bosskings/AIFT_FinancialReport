@@ -1,5 +1,6 @@
 import User from '../../models/User.js';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 
 // User Registration
 const signUp = async (req, res) => {
@@ -24,8 +25,12 @@ const signUp = async (req, res) => {
             });
         }
 
-        // Create user (Note: password should be hashed in real implementation)
-        const user = new User({ fullname, email, password });
+        // Hash the password before saving
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        // Create user with the hashed password
+        const user = new User({ fullname, email, password: hashedPassword });
         await user.save();
 
         // JWT Generation
@@ -53,7 +58,7 @@ const signUp = async (req, res) => {
         console.error('User registration error:', error);
         return res.status(500).json({ 
             status: "FAILED", 
-            message: "Internal server error."+error 
+            message: "Internal server error." + error 
         });
     }
 }
@@ -74,8 +79,9 @@ const login = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid email or password." });
         }
 
-        // Password check (This should be hashed and compared, for now, basic match)
-        if (user.password !== password) {
+        // Use bcrypt to compare passwords
+        const isPasswordMatch = await bcrypt.compare(password, user.password);
+        if (!isPasswordMatch) {
             return res.status(401).json({ success: false, message: "Invalid email or password." });
         }
 
@@ -102,5 +108,6 @@ const login = async (req, res) => {
         return res.status(500).json({ success: false, message: "Internal server error." });
     }
 }
+
 
 export { signUp, login };
