@@ -93,7 +93,7 @@ const login = async (req, res) => {
         );
 
         return res.status(200).json({
-            success: true,
+            status: "SUCCESS",
             message: "User logged in successfully.",
             token,
             user: {
@@ -105,7 +105,7 @@ const login = async (req, res) => {
 
     } catch (error) {
         console.error('User login error:', error);
-        return res.status(500).json({ success: false, message: "Internal server error." });
+        return res.status(500).json({ status: "FAILED", message: "Internal server error." });
     }
 }
 
