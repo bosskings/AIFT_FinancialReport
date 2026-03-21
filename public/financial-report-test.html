@@ -209,8 +209,8 @@
   </div>
 
   <script>
-    const API_BASE = 'https://aift-financialreport.onrender.com'; // same origin: use '' when served from server
-    const ENDPOINT = (API_BASE || '') + '/api/v1/fincanceRecord/generate';
+    const API_BASE = 'http://localhost:4500'; // same origin: use '' when served from server
+    const ENDPOINT = (API_BASE || '') + '/api/v1/fincanceRecord/downloadReport';
 
     const form = document.getElementById('reportForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -261,7 +261,10 @@
       try {
         const res = await fetch(ENDPOINT, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWJkNThhY2NkZGMxODlmNGJkOTFmZWQiLCJlbWFpbCI6Indpc2RvbUBnbWFpbC5jb20iLCJmdWxsbmFtZSI6Ildpc2RvbSBraW5ncyIsImlhdCI6MTc3NDAxNjY4NCwiZXhwIjoxNzc0NjIxNDg0fQ.i5MmiE9PuKRXH0yUxHWIv73vUmh7fz41pUG_SOtb4mE'
+          },
           body: JSON.stringify(payload)
         });
 
@@ -272,7 +275,7 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'AIFT_Financial_Report.pdf';
+          a.download = 'Wintrice_Financial_Report.pdf';
           a.click();
           URL.revokeObjectURL(url);
           setMessage('Report downloaded.', 'success');

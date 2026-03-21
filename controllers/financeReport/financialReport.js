@@ -85,17 +85,17 @@ function generateFinancialReportPDF(formData) {
       doc.font(FONT_BOLD).fontSize(14).text("Client Snapshot");
       doc.moveDown();
       doc.font(FONT_FAMILY).fontSize(FONT_SIZE).list([
-        `Name: ${data.clientName}`,
-        `Age: ${data.currentAge}`,
-        `Retirement Age Goal: ${data.retirementAge}`,
-        `Life Expectancy Assumption: ${data.lifeExpectancy}`,
-        `Marital Status: ${data.maritalStatus}`,
-        `Dependents: ${data.dependents}`,
-        `Annual Salary: ${currency(data.annualSalary)}`,
-        `Annual Salary Growth Assumption: ${percent(data.salaryGrowth, 0)}`,
-        `Current Retirement Savings: ${currency(data.retirementSavings)}`,
-        `Monthly Retirement Contribution: ${currency(data.monthlyContribution)}`,
-        `Employer Match: ${percent(data.employerMatch, 0)}`
+        `Name: ${data?.clientName ?? "N/A"}`,
+        `Age: ${data?.currentAge ?? "N/A"}`,
+        `Retirement Age Goal: ${data?.retirementAge ?? "N/A"}`,
+        `Life Expectancy Assumption: ${data?.lifeExpectancy ?? "N/A"}`,
+        `Marital Status: ${data?.maritalStatus ?? "N/A"}`,
+        `Dependents: ${data?.dependents ?? "N/A"}`,
+        `Annual Salary: ${currency?.(data?.annualSalary) ?? "N/A"}`,
+        `Annual Salary Growth Assumption: ${percent?.(data?.salaryGrowth, 0) ?? "N/A"}`,
+        `Current Retirement Savings: ${currency?.(data?.retirementSavings) ?? "N/A"}`,
+        `Monthly Retirement Contribution: ${currency?.(data?.monthlyContribution) ?? "N/A"}`,
+        `Employer Match: ${percent?.(data?.employerMatch, 0) ?? "N/A"}`
       ]);
     }
 
@@ -103,14 +103,14 @@ function generateFinancialReportPDF(formData) {
     else if (PAGE === 3) {
       doc.font(FONT_BOLD).fontSize(16).text("Financial Health Scorecard");
       doc.moveDown(0.5);
-      doc.text(`Wintrice Financial Health Score: ${data.wintriceScore} / 100`, { font: FONT_BOLD });
+      doc.text(`Wintrice Financial Health Score: ${data?.wintriceScore ?? "N/A"} / 100`, { font: FONT_BOLD });
       doc.moveDown();
       doc.text("Category         Score", { font: FONT_BOLD });
-      doc.text(`Savings Rate         ${data.savingsRateScore}`);
-      doc.text(`Debt Ratio           ${data.debtRatioScore}`);
-      doc.text(`Investment Allocation ${data.investmentAllocScore}`);
-      doc.text(`Emergency Fund       ${data.emergencyFundScore}`);
-      doc.text(`Retirement Readiness ${data.retirementReadinessScore}`);
+      doc.text(`Savings Rate         ${data?.savingsRateScore ?? "N/A"}`);
+      doc.text(`Debt Ratio           ${data?.debtRatioScore ?? "N/A"}`);
+      doc.text(`Investment Allocation ${data?.investmentAllocScore ?? "N/A"}`);
+      doc.text(`Emergency Fund       ${data?.emergencyFundScore ?? "N/A"}`);
+      doc.text(`Retirement Readiness ${data?.retirementReadinessScore ?? "N/A"}`);
       doc.moveDown(2);
       doc.text("Graph: [Radar Chart Auto-generated]", { oblique: true });
     }
@@ -121,23 +121,44 @@ function generateFinancialReportPDF(formData) {
       doc.moveDown();
 
       doc.text("Assets", { font: FONT_BOLD });
-      data.assets.forEach(a => doc.text(`${a.label}     ${currency(a.value)}`));
-      doc.text(`Total Assets           ${currency(data.assets.reduce((s, a) => s + a.value, 0))}`);
+
+      (Array.isArray(data?.assets) ? data.assets : []).forEach(a => {
+        doc.text(`${a?.label ?? "N/A"}     ${currency?.(a?.value) ?? "N/A"}`);
+      });
+      doc.text(
+        `Total Assets           ${
+          currency?.(
+            Array.isArray(data?.assets)
+              ? data.assets.reduce((s, a) => s + (a?.value ?? 0), 0)
+              : 0
+          ) ?? "N/A"
+        }`
+      );
       doc.moveDown();
       doc.text("Liabilities", { font: FONT_BOLD });
-      data.liabilities.forEach(l => doc.text(`${l.label}    ${currency(l.value)}`));
-      doc.text(`Total Liabilities      ${currency(data.liabilities.reduce((s, l) => s + l.value, 0))}`);
+      (Array.isArray(data?.liabilities) ? data.liabilities : []).forEach(l =>
+        doc.text(`${l?.label ?? "N/A"}    ${currency?.(l?.value) ?? "N/A"}`)
+      );
+      doc.text(
+        `Total Liabilities      ${
+          currency?.(
+            (Array.isArray(data?.liabilities)
+              ? data.liabilities.reduce((s, l) => s + (l?.value ?? 0), 0)
+              : 0)
+          ) ?? "N/A"
+        }`
+      );
       doc.moveDown();
-      doc.font(FONT_BOLD).text(`Net Worth: ${currency(data.netWorth)}`);
+      doc.font(FONT_BOLD).text(`Net Worth: ${currency?.(data?.netWorth) ?? "N/A"}`);
     }
 
     // PAGE 5: Cash Flow Analysis
     else if (PAGE === 5) {
       doc.font(FONT_BOLD).fontSize(16).text("Cash Flow Analysis", { underline: true });
       doc.moveDown();
-      doc.text(`Monthly Income: ${currency(data.monthlyIncome)}`);
-      doc.text(`Monthly Expenses: ${currency(data.monthlyExpenses)}`);
-      doc.text(`Surplus: ${currency(data.monthlySurplus)}`);
+      doc.text(`Monthly Income: ${currency?.(data?.monthlyIncome) ?? "N/A"}`);
+      doc.text(`Monthly Expenses: ${currency?.(data?.monthlyExpenses) ?? "N/A"}`);
+      doc.text(`Surplus: ${currency?.(data?.monthlySurplus) ?? "N/A"}`);
       doc.moveDown(2);
       doc.text("Pie Chart: [Expense Breakdown]", { oblique: true });
     }
@@ -146,19 +167,19 @@ function generateFinancialReportPDF(formData) {
     else if (PAGE === 6) {
       doc.font(FONT_BOLD).fontSize(16).text("Emergency Fund Adequacy");
       doc.moveDown();
-      doc.text(`Monthly Core Expenses: ${currency(data.monthlyCoreExpenses)}`);
-      doc.text(`Recommended 6 Months: ${currency(data.recommendedEFund)}`);
-      doc.text(`Current Liquid Savings: ${currency(data.liquidSavings)}`);
-      doc.text(`Status: ${data.efundStatus}% Funded`);
+      doc.text(`Monthly Core Expenses: ${currency?.(data?.monthlyCoreExpenses) ?? "N/A"}`);
+      doc.text(`Recommended 6 Months: ${currency?.(data?.recommendedEFund) ?? "N/A"}`);
+      doc.text(`Current Liquid Savings: ${currency?.(data?.liquidSavings) ?? "N/A"}`);
+      doc.text(`Status: ${data?.efundStatus ?? "N/A"}% Funded`);
     }
 
     // PAGE 7: Debt Analysis
     else if (PAGE === 7) {
       doc.font(FONT_BOLD).fontSize(16).text("Debt Analysis");
       doc.moveDown();
-      doc.text(`Debt-to-Income Ratio: ${data.dtiRatio}%`);
-      doc.text(`Projected Student Loan Payoff: ${data.loanPayoffYears} Years`);
-      doc.text(`Mortgage Payoff: ${data.mortgageYears} Years`);
+      doc.text(`Debt-to-Income Ratio: ${data?.dtiRatio ?? "N/A"}%`);
+      doc.text(`Projected Student Loan Payoff: ${data?.loanPayoffYears ?? "N/A"} Years`);
+      doc.text(`Mortgage Payoff: ${data?.mortgageYears ?? "N/A"} Years`);
       doc.moveDown(2);
       doc.text("Graph: [Debt Reduction Timeline]", { oblique: true });
     }
@@ -168,29 +189,33 @@ function generateFinancialReportPDF(formData) {
       doc.font(FONT_BOLD).fontSize(16).text("Current Investment Allocation");
       doc.moveDown();
       doc.text("Asset Class        %");
-      data.allocation.forEach(a =>
-        doc.text(`${a.label}${' '.repeat(22 - a.label.length)}${a.percent}%`)
+      (Array.isArray(data?.allocation) ? data.allocation : []).forEach(a =>
+        doc.text(
+          `${a?.label ?? "N/A"}${' '.repeat(
+            22 - (a?.label ? a.label.length : 0)
+          )}${a?.percent ?? "N/A"}%`
+        )
       );
       doc.moveDown();
-      doc.text(`Risk Profile: ${data.riskProfile}`);
+      doc.text(`Risk Profile: ${data?.riskProfile ?? "N/A"}`);
     }
 
     // PAGE 9: Risk Tolerance Assessment Summary
     else if (PAGE === 9) {
       doc.font(FONT_BOLD).fontSize(16).text("Risk Tolerance Assessment Summary");
       doc.moveDown();
-      doc.text(`Risk Capacity: ${data.riskCapacity}`);
-      doc.text(`Risk Behavior: ${data.riskBehavior}`);
-      doc.text(`Portfolio Alignment: ${data.portfolioAlignment}% aligned`);
+      doc.text(`Risk Capacity: ${data?.riskCapacity ?? "N/A"}`);
+      doc.text(`Risk Behavior: ${data?.riskBehavior ?? "N/A"}`);
+      doc.text(`Portfolio Alignment: ${data?.portfolioAlignment ?? "N/A"}% aligned`);
     }
 
     // PAGE 10: Retirement Projection (Base Case)
     else if (PAGE === 10) {
       doc.font(FONT_BOLD).fontSize(16).text("Retirement Projection (Base Case)");
       doc.moveDown();
-      doc.text(`Retirement Age: ${data.retirementAge}`);
-      doc.text(`Projected Portfolio Value at 67: ${currency(data.projectedPortfolio67)}`);
-      doc.text(`Estimated Annual Retirement Income: ${currency(data.estimatedAnnualRetIncome)}`);
+      doc.text(`Retirement Age: ${data?.retirementAge ?? "N/A"}`);
+      doc.text(`Projected Portfolio Value at 67: ${currency?.(data?.projectedPortfolio67) ?? "N/A"}`);
+      doc.text(`Estimated Annual Retirement Income: ${currency?.(data?.estimatedAnnualRetIncome) ?? "N/A"}`);
       doc.moveDown(2);
       doc.text("Graph: [Growth Curve (Age 35–67)]", { oblique: true });
     }
@@ -199,10 +224,10 @@ function generateFinancialReportPDF(formData) {
     else if (PAGE === 11) {
       doc.font(FONT_BOLD).fontSize(16).text("Retirement Income Gap Analysis");
       doc.moveDown();
-      doc.text(`Projected Needed Income: ${currency(data.targetRetirementIncome)}`);
-      doc.text(`Projected Income: ${currency(data.estimatedAnnualRetIncome)}`);
-      doc.text(`Annual Gap: ${currency(data.retirementIncomeGap)}`);
-      doc.text(`Gap Coverage Required: ${data.gapCoverage}%`);
+      doc.text(`Projected Needed Income: ${currency?.(data?.targetRetirementIncome) ?? "N/A"}`);
+      doc.text(`Projected Income: ${currency?.(data?.estimatedAnnualRetIncome) ?? "N/A"}`);
+      doc.text(`Annual Gap: ${currency?.(data?.retirementIncomeGap) ?? "N/A"}`);
+      doc.text(`Gap Coverage Required: ${data?.gapCoverage ?? "N/A"}%`);
     }
 
     // PAGE 12: Required Savings Adjustment
@@ -211,9 +236,9 @@ function generateFinancialReportPDF(formData) {
       doc.moveDown();
       doc.text(`To close gap:`);
       doc.list([
-        `Increase monthly savings by: ${currency(data.savingsIncrease)}`,
+        `Increase monthly savings by: ${currency?.(data?.savingsIncrease) ?? "N/A"}`,
         `OR`,
-        `Delay retirement by: ${data.delayRetirementYears} years`
+        `Delay retirement by: ${data?.delayRetirementYears ?? "N/A"} years`
       ]);
       doc.moveDown();
       doc.text("Scenario Comparison Chart", { oblique: true });
@@ -223,39 +248,53 @@ function generateFinancialReportPDF(formData) {
     else if (PAGE === 13) {
       doc.font(FONT_BOLD).fontSize(16).text("Social Security Estimate");
       doc.moveDown();
-      doc.text(`Estimated Benefit at 67: ${currency(data.ssa67)}/year`);
-      doc.text(`Estimated Benefit at 70: ${currency(data.ssa70)}/year`);
-      doc.text(`Break-even Age Analysis: ${data.breakEvenAge}`);
+      doc.text(`Estimated Benefit at 67: ${currency?.(data?.ssa67) ?? "N/A"}/year`);
+      doc.text(`Estimated Benefit at 70: ${currency?.(data?.ssa70) ?? "N/A"}/year`);
+      doc.text(`Break-even Age Analysis: ${data?.breakEvenAge ?? "N/A"}`);
     }
 
     // PAGE 14: Employer Plan Optimization
     else if (PAGE === 14) {
       doc.font(FONT_BOLD).fontSize(16).text("Employer Plan Optimization");
       doc.moveDown();
-      doc.text(`Current Contribution: ${percent(data.currentContribution, 0)}`);
-      doc.text(`Recommended Contribution: ${percent(data.recommendedContribution, 0)}`);
-      doc.text(`Employer Match Capture Status: ${data.employerMatchStatus}`);
+      doc.text(`Current Contribution: ${percent?.(data?.currentContribution, 0) ?? "N/A"}`);
+      doc.text(`Recommended Contribution: ${percent?.(data?.recommendedContribution, 0) ?? "N/A"}`);
+      doc.text(`Employer Match Capture Status: ${data?.employerMatchStatus ?? "N/A"}`);
     }
 
     // PAGE 15: Tax Optimization Overview
     else if (PAGE === 15) {
       doc.font(FONT_BOLD).fontSize(16).text("Tax Optimization Overview");
       doc.moveDown();
-      doc.text(`Current Marginal Tax Rate: ${data.taxRate}%`);
+      doc.text(`Current Marginal Tax Rate: ${data?.taxRate ?? "N/A"}%`);
       doc.text("Roth vs Traditional Mix Recommendation:");
       doc.list([
-        `${data.traditionalPercent}% Traditional`,
-        `${data.rothPercent}% Roth`
+        `${data?.traditionalPercent ?? "N/A"}% Traditional`,
+        `${data?.rothPercent ?? "N/A"}% Roth`
       ]);
-      doc.text(`Projected Lifetime Tax Savings: ${currency(data.lifetimeTaxSavings)}`);
+      doc.text(`Projected Lifetime Tax Savings: ${currency?.(data?.lifetimeTaxSavings) ?? "N/A"}`);
     }
 
     // PAGE 16: Inflation Impact Analysis
     else if (PAGE === 16) {
       doc.font(FONT_BOLD).fontSize(16).text("Inflation Impact Analysis");
       doc.moveDown();
-      doc.text(`Assumed Inflation: ${(data.inflationRate * 100).toFixed(1)}%`);
-      doc.text(`${currency(data.salaryToday)} today = ${currency(data.salaryFuture)} at retirement (${data.retirementAge - data.currentAge} years)`);
+      doc.text(
+        `Assumed Inflation: ${
+          typeof data?.inflationRate === "number"
+            ? (data.inflationRate * 100).toFixed(1)
+            : "N/A"
+        }%`
+      );
+      doc.text(
+        `${currency?.(data?.salaryToday) ?? "N/A"} today = ${
+          currency?.(data?.salaryFuture) ?? "N/A"
+        } at retirement (${
+          typeof data?.retirementAge === "number" && typeof data?.currentAge === "number"
+            ? data.retirementAge - data.currentAge
+            : "N/A"
+        } years)`
+      );
       doc.moveDown();
       doc.text("Inflation Impact Chart", { oblique: true });
     }
@@ -264,53 +303,61 @@ function generateFinancialReportPDF(formData) {
     else if (PAGE === 17) {
       doc.font(FONT_BOLD).fontSize(16).text("Longevity Risk Analysis");
       doc.moveDown();
-      doc.text(`Probability of living past 90: ${data.chancePast90}%`);
-      doc.text(`Probability of living past 95: ${data.chancePast95}%`);
-      doc.text(`Sustainability Test: Portfolio lasts to age ${data.portfolioLastsTo}`);
+      doc.text(`Probability of living past 90: ${data?.chancePast90 ?? "N/A"}%`);
+      doc.text(`Probability of living past 95: ${data?.chancePast95 ?? "N/A"}%`);
+      doc.text(
+        `Sustainability Test: Portfolio lasts to age ${data?.portfolioLastsTo ?? "N/A"}`
+      );
     }
 
     // PAGE 18: Healthcare Cost Projection
     else if (PAGE === 18) {
       doc.font(FONT_BOLD).fontSize(16).text("Healthcare Cost Projection");
       doc.moveDown();
-      doc.text(`Estimated Annual Healthcare at 67: ${currency(data.healthcareAnnual)}`);
-      doc.text(`Lifetime Retirement Healthcare Estimate: ${currency(data.healthcareLifetime)}`);
+      doc.text(
+        `Estimated Annual Healthcare at 67: ${currency?.(data?.healthcareAnnual) ?? "N/A"}`
+      );
+      doc.text(
+        `Lifetime Retirement Healthcare Estimate: ${currency?.(data?.healthcareLifetime) ?? "N/A"}`
+      );
     }
 
     // PAGE 19: Insurance Coverage Review
     else if (PAGE === 19) {
       doc.font(FONT_BOLD).fontSize(16).text("Insurance Coverage Review");
       doc.moveDown();
-      doc.text(`Life Insurance: ${currency(data.lifeInsurance)}`);
-      doc.text(`Recommended Coverage: ${currency(data.recommendedInsurance)}`);
-      doc.text(`Disability Coverage: ${data.disabilityCoverage}`);
-      doc.text(`Gap Identified: ${currency(data.insuranceGap)}`);
+      doc.text(`Life Insurance: ${currency?.(data?.lifeInsurance) ?? "N/A"}`);
+      doc.text(`Recommended Coverage: ${currency?.(data?.recommendedInsurance) ?? "N/A"}`);
+      doc.text(`Disability Coverage: ${data?.disabilityCoverage ?? "N/A"}`);
+      doc.text(`Gap Identified: ${currency?.(data?.insuranceGap) ?? "N/A"}`);
     }
 
     // PAGE 20: College Planning (If Applicable)
     else if (PAGE === 20) {
       doc.font(FONT_BOLD).fontSize(16).text("College Planning");
       doc.moveDown();
-      doc.text(`Dependents: ${data.children}`);
-      doc.text(`Projected 4-Year Public Cost: ${currency(data.collegeCost)}`);
-      doc.text(`529 Current Balance: ${currency(data.savings529)}`);
-      doc.text(`Funding Gap: ${currency(data.collegeGap)}`);
+      doc.text(`Dependents: ${data?.children ?? "N/A"}`);
+      doc.text(
+        `Projected 4-Year Public Cost: ${currency?.(data?.collegeCost) ?? "N/A"}`
+      );
+      doc.text(`529 Current Balance: ${currency?.(data?.savings529) ?? "N/A"}`);
+      doc.text(`Funding Gap: ${currency?.(data?.collegeGap) ?? "N/A"}`);
     }
 
     // PAGE 21: Scenario Analysis – Optimistic Market
     else if (PAGE === 21) {
       doc.font(FONT_BOLD).fontSize(16).text("Scenario Analysis – Optimistic Market");
       doc.moveDown();
-      doc.text(`Portfolio at 67: ${currency(data.optimisticPortfolio)}`);
-      doc.text(`Income Replacement: ${data.optimisticReplacement}%`);
+      doc.text(`Portfolio at 67: ${currency?.(data?.optimisticPortfolio) ?? "N/A"}`);
+      doc.text(`Income Replacement: ${data?.optimisticReplacement ?? "N/A"}%`);
     }
 
     // PAGE 22: Scenario Analysis – Conservative Market
     else if (PAGE === 22) {
       doc.font(FONT_BOLD).fontSize(16).text("Scenario Analysis – Conservative Market");
       doc.moveDown();
-      doc.text(`Portfolio at 67: ${currency(data.conservativePortfolio)}`);
-      doc.text(`Income Replacement: ${data.conservativeReplacement}%`);
+      doc.text(`Portfolio at 67: ${currency?.(data?.conservativePortfolio) ?? "N/A"}`);
+      doc.text(`Income Replacement: ${data?.conservativeReplacement ?? "N/A"}%`);
       doc.text(`Stress Test Result: Moderate Risk Exposure`);
     }
 
@@ -318,15 +365,20 @@ function generateFinancialReportPDF(formData) {
     else if (PAGE === 23) {
       doc.font(FONT_BOLD).fontSize(16).text("Recommended Action Plan");
       doc.moveDown();
-      data.actionPlan.forEach((item, idx) => doc.text(`Priority ${idx + 1}: ${item}`));
+      (Array.isArray(data?.actionPlan) ? data.actionPlan : []).forEach(
+        (item, idx) => doc.text(`Priority ${idx + 1}: ${item ?? "N/A"}`)
+      );
     }
 
     // PAGE 24: 12-Month Implementation Roadmap
     else if (PAGE === 24) {
       doc.font(FONT_BOLD).fontSize(16).text("12-Month Implementation Roadmap");
       doc.moveDown();
-      data.roadmap.forEach(q =>
-        doc.list([q.quarter, ...q.steps], { bulletRadius: 1 })
+      (Array.isArray(data?.roadmap) ? data.roadmap : []).forEach(q =>
+        doc.list(
+          [q?.quarter ?? "N/A", ...(Array.isArray(q?.steps) ? q.steps : ["N/A"])],
+          { bulletRadius: 1 }
+        )
       );
     }
 
@@ -335,10 +387,14 @@ function generateFinancialReportPDF(formData) {
       doc.font(FONT_BOLD).fontSize(16).text("Disclosures & Assumptions");
       doc.moveDown();
       doc.list([
-        `Assumed return: ${data.assumedReturn}%`,
-        `Inflation: ${(data.inflationRate * 100).toFixed(1)}%`,
-        `Retirement age: ${data.retireAge}`,
-        `Life expectancy: ${data.lifeExp}`,
+        `Assumed return: ${data?.assumedReturn ?? "N/A"}%`,
+        `Inflation: ${
+          typeof data?.inflationRate === "number"
+            ? (data.inflationRate * 100).toFixed(1)
+            : "N/A"
+        }%`,
+        `Retirement age: ${data?.retireAge ?? "N/A"}`,
+        `Life expectancy: ${data?.lifeExp ?? "N/A"}`,
         `Social Security estimated based on current law`,
         `Projections are hypothetical and not guaranteed`
       ]);
@@ -347,8 +403,8 @@ function generateFinancialReportPDF(formData) {
       doc.font(FONT_BOLD).fontSize(14).text('AIFT Financial Security Blueprint™', { align: "center" });
       doc.font(FONT_FAMILY).fontSize(11).text('\nEmployee Retirement Intelligence Report', { align: "center" });
       doc.moveDown();
-      doc.text(`Prepared for: ${data.clientName}`, { align: "center" });
-      doc.text(`Employer: ${data.employer}`, { align: "center" });
+      doc.text(`Prepared for: ${data?.clientName ?? "N/A"}`, { align: "center" });
+      doc.text(`Employer: ${data?.employer ?? "N/A"}`, { align: "center" });
       doc.text('Prepared by: AIFT Retirement Intelligence System', { align: "center" });
       doc.text('Confidential | For Employee Use Only', { align: "center" });
     }
@@ -614,9 +670,8 @@ async function generateReport(req, res) {
   } catch (error) {
     console.error('Error generating financial report:', error);
     res.status(500).json({
-      success: false,
-      error: 'Internal server error while generating financial report',
-      details: error.message
+      status: "FAILED",
+      message: 'Internal server error while generating financial report'+error.message
     });
   }
 }
