@@ -10,7 +10,7 @@ const schoolSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true
-    },    
+    },
     students: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Student'
@@ -19,6 +19,27 @@ const schoolSchema = new mongoose.Schema({
         type: String,
         enum: ['ACTIVE', 'INACTIVE'],
         default: 'ACTIVE'
+    },
+    email: {
+        type: String,
+        unique: true
+    },
+    accessId: {
+        type: String,
+        default: "0000000000"
+    },
+    authCode: {
+        type: String,
+        default: "000000"
+    },
+    schoolLogo: {
+        type: String, // Can store a URL or base64 string to the logo image
+        default: ""
+    },
+    colorTheme: {
+        type: String,
+        enum: ['black', 'blue'],
+        default: 'blue'
     },
     settings: {
         enrolmentPolicy: {

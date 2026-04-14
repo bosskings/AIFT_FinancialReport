@@ -14,7 +14,7 @@ const supportSchema = new mongoose.Schema({
     },
     from: {
         type: String,
-        enum: ['student', 'school'],
+        enum: ['STUDENT', 'SCHOOL'],
         required: true
     },
     

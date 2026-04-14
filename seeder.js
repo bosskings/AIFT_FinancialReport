@@ -1,143 +1,76 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { faker } from "@faker-js/faker";
-import School from "./models/School.js";
-import Student from "./models/Student.js";
-import Support from "./models/Support.js";
+import Quiz from "./models/Quiz.js";
 
-const FAKE_SCHOOL_COUNT = 5;
-const STUDENTS_PER_SCHOOL = 20;
-const GRADE_LEVELS = [
-  "Primary 1", "Primary 2", "Primary 3", "Primary 4", "Primary 5", "Primary 6",
-  "JSS 1", "JSS 2", "JSS 3", "SS 1", "SS 2", "SS 3"
-];
-const SCHOOL_STATUSES = ["Active", "Inactive"];
-const ENROL_POLICIES = ["open", "by-invitation"];
-const COURSE_POOL = [
-  { name: "Mathematics" }, { name: "English" }, { name: "Science" },
-  { name: "History" }, { name: "Literature" }, { name: "Art" }, { name: "PE" }
-];
-const SUPPORTS_PER_STUDENT = 1; // Adjust as desired
-const SUPPORTS_PER_SCHOOL = 1; // Adjust as desired
+const FAKE_QUIZ_COUNT = 10;
+const QUESTIONS_PER_QUIZ = 5;
+const STUDENTS_PER_QUIZ = 10;
+const STUDENT_IDS_POOL_SIZE = 40;
+const ANSWER_LABELS = ['a', 'b', 'c', 'd'];
 
-function generateFakeStudent(idx, schoolId) {
-  const gender = faker.helpers.arrayElement(['male', 'female']);
+// Helper to create random questions per quiz
+function generateFakeQuestion() {
+  const correctIdx = faker.number.int({ min: 0, max: 3 });
   return {
-    name: faker.person.fullName({ sex: gender }),
-    age: faker.number.int({ min: 9, max: 20 }),
-    grade: faker.helpers.arrayElement(GRADE_LEVELS),
-    enrolled: faker.datatype.boolean(),
-    status: faker.helpers.arrayElement(['ACTIVE', 'INACTIVE', 'PENDING']),
-    school: schoolId,
-    createdAt: faker.date.past({ years: 3 }),
-    updatedAt: faker.date.recent({ days: 30 }),
+    question: faker.lorem.sentence({ min: 5, max: 10 }),
+    answers: {
+      a: faker.lorem.word(),
+      b: faker.lorem.word(),
+      c: faker.lorem.word(),
+      d: faker.lorem.word()
+    },
+    correctAnswer: ANSWER_LABELS[correctIdx]
   };
 }
 
-function generateFakeCourses() {
-  const selected = faker.helpers.arrayElements(COURSE_POOL, { min: 3, max: 5 });
-  return selected.map(c => ({
-    name: c.name,
-    available: faker.datatype.boolean(),
-  }));
-}
-
-function generateFakeSupportForStudent(studentId) {
+// Helper to create fake students per quiz
+function generateFakeQuizStudent(studentId) {
   return {
-    title: faker.lorem.sentence({ min: 2, max: 8 }),
-    user: studentId,
-    from: 'student',
-    status: faker.helpers.arrayElement(['OPEN', 'PENDING', 'CLOSED']),
-    conversation: {
-      message: faker.lorem.sentence({ min: 5, max: 14 }),
-      reply: faker.helpers.maybe(() => faker.lorem.sentence({ min: 3, max: 10 }), { probability: 0.75 }) || ""
-    },
-    createdAt: faker.date.recent({ days: 50 })
-  }
+    studentId,
+    score: faker.number.int({ min: 0, max: QUESTIONS_PER_QUIZ })
+  };
 }
 
-function generateFakeSupportForSchool(schoolId) {
-  return {
-    title: faker.lorem.sentence({ min: 2, max: 8 }),
-    user: schoolId,
-    from: 'school',
-    status: faker.helpers.arrayElement(['OPEN', 'PENDING', 'CLOSED']),
-    conversation: {
-      message: faker.lorem.sentence({ min: 5, max: 14 }),
-      reply: faker.helpers.maybe(() => faker.lorem.sentence({ min: 3, max: 10 }), { probability: 0.7 }) || ""
-    },
-    createdAt: faker.date.recent({ days: 50 })
-  }
-}
-
+// Main seeder function
 async function seed() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Connected to MongoDB");
 
-    // Clean
-    await Student.deleteMany({});
-    await School.deleteMany({});
-    await Support.deleteMany({});
-    console.log("Cleared existing schools, students, and supports.");
+    // Clean Quiz collection
+    await Quiz.deleteMany({});
+    console.log("Cleared existing quizzes.");
 
-    // Seed Schools
-    const schools = [];
-    for (let i = 0; i < FAKE_SCHOOL_COUNT; ++i) {
-      const schoolData = {
-        name: faker.company.name() + " School",
-        address: faker.location.streetAddress(),
-        students: [],
-        status: faker.helpers.arrayElement(SCHOOL_STATUSES),
-        settings: {
-          enrolmentPolicy: faker.helpers.arrayElements(ENROL_POLICIES, { min: 1, max: 2 }),
-          permissions: {
-            admin: faker.datatype.boolean(),
-            student: true,
-          },
-          courses: generateFakeCourses(),
-        }
-      };
-      schools.push(schoolData);
-    }
-    const createdSchools = await School.insertMany(schools);
+    // Make a fake pool of student ObjectIds for reference
+    const fakeStudentIds = Array(STUDENT_IDS_POOL_SIZE)
+      .fill(0)
+      .map(() => new mongoose.Types.ObjectId());
 
-    // Seed students for each school
-    let allStudents = [];
-    for (const school of createdSchools) {
-      const students = [];
-      for (let i = 0; i < STUDENTS_PER_SCHOOL; ++i) {
-        students.push(generateFakeStudent(i, school._id));
-      }
-      const createdStudents = await Student.insertMany(students);
+    const quizzes = [];
 
-      school.students = createdStudents.map(s => s._id);
-      await school.save();
+    for (let i = 0; i < FAKE_QUIZ_COUNT; ++i) {
+      const questions = Array(QUESTIONS_PER_QUIZ)
+        .fill(0)
+        .map(() => generateFakeQuestion());
 
-      allStudents = allStudents.concat(createdStudents);
+      // Randomly select unique students for this quiz
+      const quizStudentIds = faker.helpers.arrayElements(fakeStudentIds, { min: STUDENTS_PER_QUIZ, max: STUDENTS_PER_QUIZ });
+      const students = quizStudentIds.map(id => generateFakeQuizStudent(id));
+
+      quizzes.push({
+        title: faker.company.catchPhrase() + " Quiz",
+        questions,
+        students,
+        dateWritten: faker.date.recent({ days: 365 })
+      });
     }
 
-    // Seed Support tickets
-    const supportSeeds = [];
+    const result = await Quiz.insertMany(quizzes);
 
-    // For each student, create SUPPORTS_PER_STUDENT tickets
-    for (const student of allStudents) {
-      for (let i = 0; i < SUPPORTS_PER_STUDENT; ++i) {
-        supportSeeds.push(generateFakeSupportForStudent(student._id));
-      }
-    }
-    // For each school, create SUPPORTS_PER_SCHOOL tickets
-    for (const school of createdSchools) {
-      for (let i = 0; i < SUPPORTS_PER_SCHOOL; ++i) {
-        supportSeeds.push(generateFakeSupportForSchool(school._id));
-      }
-    }
-
-    const createdSupports = await Support.insertMany(supportSeeds);
-
-    console.log(`Seeded ${createdSchools.length} schools, ${allStudents.length} students, and ${createdSupports.length} supports successfully.`);
+    console.log(`Seeded ${result.length} quizzes successfully.`);
   } catch (err) {
-    console.error("School, Student, or Support seed failed:", err);
+    console.error("Quiz seed failed:", err);
     process.exit(1);
   } finally {
     await mongoose.disconnect();

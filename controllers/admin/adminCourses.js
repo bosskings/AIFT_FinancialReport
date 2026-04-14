@@ -87,6 +87,53 @@ const createCourse = async (req, res) => {
     }
 };
 
+
+// function to upload course files to cloudflare.
+const uploadCourseFiles = async (req, res) => {
+    try {
+        const { course_id, type, fileUid, fileURL } = req.body;
+
+        if (!course_id || !type || !fileUid || !fileURL) {
+            return res.status(400).json({
+                status: "FAILED",
+                message: "Please provide course_id, type, fileUid, and fileURL."
+            });
+        }
+
+        // Build the file object
+        const fileObj = {
+            type,
+            fileURL,
+            fileUid
+        };
+
+        // Update: add the file to the course's files array
+        const updatedCourse = await Course.findByIdAndUpdate(
+            course_id,
+            { $push: { files: fileObj } },
+            { new: true }
+        );
+
+        if (!updatedCourse) {
+            return res.status(404).json({
+                status: "FAILED",
+                message: "Course not found."
+            });
+        }
+
+        res.status(200).json({
+            status: "SUCCESS",
+            data: updatedCourse
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: "FAILED",
+            message: error.message
+        });
+    }
+};
+
+
 export { 
     getCoursesOverview,
     getAllCourses,

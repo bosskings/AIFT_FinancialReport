@@ -13,7 +13,7 @@ const announcementSchema = new mongoose.Schema({
     },
     target: {
         type: String,
-        enum: ['Student', 'School'],
+        enum: ['SCHOOL', 'STUDENT'],
         required: true
     },
     createdAt: {

@@ -37,9 +37,10 @@ const signUp = async (req, res) => {
         const token = jwt.sign({ 
                 userId: user._id, 
                 email: user.email, 
-                fullname: user.fullname 
+                fullname: user.fullname,
+                type:"REPORT" 
             },
-            process.env.JWT_SECRET || "wintriceSecretKey",
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -70,25 +71,30 @@ const login = async (req, res) => {
 
         // Basic validation
         if (!email || !password) {
-            return res.status(400).json({ success: false, message: "Email and password are required." });
+            return res.status(400).json({ status: "FAILED", message: "Email and password are required." });
         }
 
         // Find user
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json({ success: false, message: "Invalid email or password." });
+            return res.status(401).json({ status: "FAILED", message: "Invalid email or password." });
         }
 
         // Use bcrypt to compare passwords
         const isPasswordMatch = await bcrypt.compare(password, user.password);
         if (!isPasswordMatch) {
-            return res.status(401).json({ success: false, message: "Invalid email or password." });
+            return res.status(401).json({ status: "FAILED", message: "Invalid email or password." });
         }
 
         // JWT Generation
         const token = jwt.sign(
-            { userId: user._id, email: user.email, fullname: user.fullname },
-            process.env.JWT_SECRET || "wintriceSecretKey",
+            { 
+                userId: user._id, 
+                email: user.email, 
+                fullname: user.fullname,
+                userType: "FINANCE"
+            },
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
