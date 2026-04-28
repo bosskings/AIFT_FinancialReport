@@ -30,6 +30,9 @@ const requireAuth = async (req, res, next) => {
         } else if (userType && userType.includes('SCHOOL')) {
             user = await Schools.findById(decoded.schoolId);
 
+        } else if (userType && userType.includes('ADMIN')) {
+            user = {id:"001"};
+
         } else {
             return res.status(401).json({
                 status: "FAILED",

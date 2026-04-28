@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 
 import { createAnnouncement } from '../controllers/admin/adminAnnouncement.js';
 import {
@@ -27,8 +28,19 @@ import {
     updateSupportStatus,
 } from '../controllers/admin/support.js';
 import adminOverview from '../controllers/admin/adminHome.js';
+import adminLogin from '../controllers/admin/adminAuth.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
 
 const adminRouter = express.Router();
+
+// Multer configuration for file upload
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+adminRouter.post('/login', adminLogin);
+
+// Apply authentication middleware for subsequent routes
+adminRouter.use(requireAuth);
 
 // Announcements
 adminRouter.post('/createAnnouncements', createAnnouncement);
@@ -46,7 +58,7 @@ adminRouter.get('/overview', adminOverview);
 // Schools
 adminRouter.get('/schools/overview', getStudentOverview);
 adminRouter.get('/schools', getAllSchools);
-adminRouter.post('/schools', createSchool);
+adminRouter.post('/schools', upload.fields([{ name: 'image', maxCount: 1 }]), createSchool);
 adminRouter.get('/schools/:id', getSchoolById);
 adminRouter.put('/schools/:id', updateSchool);
 

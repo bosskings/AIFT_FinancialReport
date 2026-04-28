@@ -1,5 +1,7 @@
 import School from '../../models/School.js';
 import Student from '../../models/Student.js';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import sharp from 'sharp';
 
 
 /**
@@ -64,12 +66,59 @@ const getAllSchools = async (req, res) => {
     }
 };
 
+
 const createSchool = async (req, res) => {
+    
     try {
-        const school = await School.create(req.body);
-        res.status(201).json({ status: "SUCCESS", data: school });
+        // Fix credential error: use 'AWS' keys for the credentials object
+        const s3 = new S3Client({
+            region: "auto",
+            endpoint: `https://${process.env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            credentials: {
+                accessKeyId: process.env.R2_ACCESS_KEY,
+                secretAccessKey: process.env.R2_SECRET_KEY,
+            },
+        });
+        
+
+        // Verify file input
+        if (!req.files || !req.files.image || !req.files.image[0]) {
+            return res.status(400).json({ status: "FAILED", message: "No image file uploaded." });
+        }
+        const imageFile = req.files.image[0];
+        if (!imageFile.buffer) {
+            return res.status(400).json({ status: "FAILED", message: "Invalid image file: no buffer." });
+        }
+
+        // Convert image to webp
+        const webpBuffer = await sharp(imageFile.buffer).webp().toBuffer();
+        // Generate unique filename
+        const key = `${Date.now()}.webp`;
+
+        const command = new PutObjectCommand({
+            Bucket: "wintrice-images",
+            Key: key,
+            Body: webpBuffer,
+            ContentType: "image/webp",
+            ACL: 'public-read'
+        });
+
+        await s3.send(command);
+
+        const imageUrl = `https://wintrice.com/${key}`;
+
+        
+        const newSchoolData = {
+            ...req.body,
+            url: imageUrl
+        };
+
+        // const school = await School.create(newSchoolData);
+
+        res.status(201).json({ status: "SUCCESS", data: newSchoolData });
     } catch (error) {
         res.status(500).json({ status: "FAILED", message: error.message });
+        console.error(error.message);
     }
 };
 

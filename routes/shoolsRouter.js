@@ -24,8 +24,6 @@ schoolsRouter.post('/login', login);
 // Apply authentication middleware for subsequent routes
 schoolsRouter.use(requireAuth);
 
-
-
 // Students endpoints
 schoolsRouter.get('/overview', schoolOverview);
 schoolsRouter.get('/students', getAllStudents);

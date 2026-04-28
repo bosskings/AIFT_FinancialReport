@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upload School Picture</title>
+</head>
+<body>
+  <h2>Upload School Picture</h2>
+  <form id="uploadForm">
+    <input type="file" id="imageInput" accept="image/*" required />
+    <button type="submit">Upload</button>
+  </form>
+  <div id="result"></div>
+
+  <script>
+    document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const fileInput = document.getElementById("imageInput");
+      const file = fileInput.files[0];
+      if (!file) {
+        document.getElementById("result").textContent = "No file selected.";
+        return;
+      }
+
+      // Get signed upload URL and key from backend
+      // Send the image file directly to the backend for one-step upload and processing
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("http://localhost:4500/api/v1/admin/schools", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyVHlwZSI6IkFETUlOIiwibG9naW5JRCI6IldpbnRyaWNlQGFkbWluLmFjY2VzcyIsImlhdCI6MTc3NzM0MjQwNywiZXhwIjoxODA4OTAwMDA3fQ.v1ZXN5TwQkz2Q3uM8FxEiRu6U-70h2oheABav0sZ2Ts"
+          // Do NOT set Content-Type when using FormData; browser will set it with boundary
+        },
+        body: formData
+      });
+      const { data } = await response.json();
+      
+      const imageUrl = data.url;
+      document.getElementById("result").innerHTML = `
+        <p>Upload successful!</p>
+        <img src="${imageUrl}" alt="Uploaded Image" style="max-width:300px;display:block;margin-top:10px;">
+        <p>URL: <a href="${imageUrl}" target="_blank">${imageUrl}</a></p>
+      `;
+    });
+  </script>
+</body>
+</html>

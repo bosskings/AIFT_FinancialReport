@@ -3,9 +3,11 @@ import nodemailer from "nodemailer";
 async function sendEmail(receiverEmail, subject, messageBody) {
     // Configure transporter (assumes environment variables are set for safety)
     const transporter = nodemailer.createTransport({
-        service: process.env.EMAIL_SERVICE,
+        service: 'gmail',
+        host: "smtp.gmail.com",
+        port: 587,
         auth: {
-            user: process.env.EMAIL_USER,
+            user: 'wintricelms@gmail.com',
             pass: process.env.EMAIL_PASS
         }
     });
@@ -24,7 +26,7 @@ async function sendEmail(receiverEmail, subject, messageBody) {
     try {
         // Send the email
         await transporter.sendMail({
-            from: process.env.EMAIL_USER,
+            from: 'WinTrice Finance <wintricelms@gmial.com>',
             to: receiverEmail,
             subject: subject,
             html: htmlContent
