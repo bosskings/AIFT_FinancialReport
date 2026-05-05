@@ -1,5 +1,8 @@
 import nodemailer from 'nodemailer';
 import School from '../../models/School.js';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import sharp from "sharp";
+
 
 
 const updateSchoolProfile = async (req, res) => {
@@ -14,7 +17,8 @@ const updateSchoolProfile = async (req, res) => {
         if ('email' in updateFields || 'password' in updateFields) {
             return res.status(400).json({ 
                 status:"FAILED", 
-                message: 'Updating email or password is not allowed via this endpoint.' });
+                message: 'Updating email or password is not allowed via this endpoint.' 
+            });
         }
 
         // Only allow updating certain top-level and nested fields for security
@@ -26,6 +30,33 @@ const updateSchoolProfile = async (req, res) => {
                 updates[field] = updateFields[field];
             }
         });
+
+        // Handle image upload if present in req.file (using multer, upload.single('image'))
+        if (req.file && req.file.buffer) {
+            // Convert image to webp
+            const webpBuffer = await sharp(req.file.buffer).webp().toBuffer();
+            // Prepare S3 (Cloudflare R2) client
+            const s3 = new S3Client({
+                region: "auto",
+                endpoint: `https://${process.env.CF_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+                credentials: {
+                    accessKeyId: process.env.R2_ACCESS_KEY,
+                    secretAccessKey: process.env.R2_SECRET_KEY,
+                },
+            });
+
+            const imageKey = `wintrice-images/school-logos/${Date.now()}-${Math.round(Math.random()*10000)}.webp`;
+            const putCommand = new PutObjectCommand({
+                Bucket: "wintrice-images",
+                Key: imageKey,
+                Body: webpBuffer,
+                ContentType: "image/webp",
+                ACL: "public-read"
+            });
+            await s3.send(putCommand);
+            // Set schoolLogo to url
+            updates.schoolLogo = `https://wintrice.com/${imageKey}`;
+        }
 
         const updatedSchool = await School.findByIdAndUpdate(
             schoolId,

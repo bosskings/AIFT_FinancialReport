@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { verifySchool, login } from "../controllers/schools/schoolAuth.js";
 import { 
@@ -17,7 +18,9 @@ import {
 
 const schoolsRouter = express.Router();
 
-
+// Multer configuration for file upload
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 schoolsRouter.post('/verify', verifySchool);
 schoolsRouter.post('/login', login);
@@ -33,7 +36,7 @@ schoolsRouter.get('/students/:id', getStudentById);
 schoolsRouter.get('/quizzes/stats', getQuizStatsForSchool);
 
 // School profile/settings endpoints
-schoolsRouter.put('/profile', updateSchoolProfile);
+schoolsRouter.put('/profile', upload.single('image'), updateSchoolProfile);
 schoolsRouter.put('/profile/email', updateSchoolEmail);
 schoolsRouter.put('/profile/password', updateSchoolPassword);
 
