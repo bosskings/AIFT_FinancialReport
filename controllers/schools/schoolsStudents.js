@@ -172,9 +172,33 @@ const getStudentById = async (req, res) => {
             });
         }
 
+        // Fetch all quizzes that this student has participated in
+        // Quiz.students: [{ studentId, ... }]
+        const quizzes = await Quiz.find({ "students.studentId": id }).lean();
+
+        // Prepare quiz details for this student
+        const quizzesForStudent = quizzes.map(quiz => {
+            // Find this student's entry within the quiz
+            const studentQuizEntry = quiz.students.find(s =>
+                (s.studentId.equals ? s.studentId.equals(id) : String(s.studentId) === String(id))
+            );
+            
+            // Return summary for each quiz relevant to this student
+            return {
+                quizId: quiz._id,
+                title: quiz.title,
+                score: studentQuizEntry ? studentQuizEntry.score : null,
+                completionTime: studentQuizEntry ? studentQuizEntry.completionTime : null,
+                complete: studentQuizEntry ? studentQuizEntry.complete : null,
+                totalQuestions: quiz.questions.length,
+                dateWritten: quiz.dateWritten
+            };
+        });
+
         res.status(200).json({
             status: "SUCCESS",
-            student
+            student,
+            quizzes: quizzesForStudent
         });
     } catch (error) {
         res.status(500).json({ 
