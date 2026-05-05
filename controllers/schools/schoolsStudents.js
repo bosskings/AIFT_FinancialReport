@@ -1,7 +1,7 @@
 import Quiz from "../../models/Quiz.js";
 import School from '../../models/School.js';
 import Student from '../../models/Student.js';
-import nodemailer from "nodemailer"
+import sendEmail from '../../utils/sendEmail.js';
 
 const schoolOverview = async(req, res) =>{
 
@@ -75,7 +75,7 @@ const generateRandomPassword = (length = 8) => {
 
 const addNewStudent = async (req, res) => {
     try {
-        const { email, grade } = req.body;
+        const { email, grade, age, name } = req.body;
         const schoolId = req.schoolId;
 
         if (!email || !grade) {
@@ -101,6 +101,8 @@ const addNewStudent = async (req, res) => {
         const student = new Student({
             email,
             grade,
+            name,
+            age,
             password,
             school: schoolId,
             status: 'ACTIVE'
@@ -108,23 +110,34 @@ const addNewStudent = async (req, res) => {
 
         await student.save();
 
-        // Setup nodemailer
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER, // set in your env
-                pass: process.env.EMAIL_PASS
-            }
-        });
+        // Prepare email content and send notification to new student
+        const toEmail = email;
+        const emailSubject = "Your Wintrice Student Account Created";
+        const emailHtml = `
+            <div style="background-color: #1E90FF; color: #fff; padding: 24px; font-family: Arial, sans-serif; border-radius: 8px;">
+                <div style="background-color: #fff; color: #1E90FF; padding: 24px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(30,144,255,0.12);">
+                    <h1 style="color: #1E90FF; margin-bottom: 16px;">Welcome to Wintrice E-learning!</h1>
+                    <p style="font-size: 18px; color: #1E90FF;">
+                        Your student account has been created.
+                    </p>
+                    <p style="margin: 24px 0 8px 0; color: #1E90FF;">
+                        <strong>Your Login Details:</strong>
+                    </p>
+                    <div style="font-size: 18px; color: #1E90FF; background: #f6faff; border-radius: 4px; padding: 12px; display: inline-block;">
+                        Email: <strong>${email}</strong><br/>
+                        Password: <strong>${password}</strong>
+                    </div>
+                    <p style="margin: 24px 0 0 0; color: #1E90FF;">
+                        Please login and change your password after first login.
+                    </p>
+                </div>
+            </div>
+        `;
 
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Your Wintrice Student Account Created',
-            text: `Your account has been created, view your login details below:\n\nEmail: ${email}\nPassword: ${password}\n\nPlease login and change your password.`
-        };
+        if (toEmail) {
+            await sendEmail(toEmail, emailSubject, emailHtml);
+        }
 
-        await transporter.sendMail(mailOptions);
 
         res.status(201).json({
             status: "SUCCESS",

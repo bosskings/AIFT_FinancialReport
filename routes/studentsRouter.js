@@ -1,6 +1,7 @@
 import express from 'express';
+import { quizIntro, quizQuestions } from '../controllers/students/studentQuiz.js';
 import { studentsLogin } from '../controllers/students/studentsAuth.js';
-import studentsOverview from '../controllers/students/studentsOverview.js';
+import {studentsOverview, updateStudentProfile} from '../controllers/students/studentsOverview.js';
 import { coursesOverview, viewCourse } from '../controllers/students/studentsCourses.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 
@@ -19,6 +20,14 @@ studentsRouter.get('/student-viewcourse', viewCourse);
 
 
 // quiz
+
+studentsRouter.get('/quiz', quizIntro);
+studentsRouter.get('/quiz-questions', quizQuestions);
+
+
+// students setting
+studentsRouter.put('/profile', updateStudentProfile);
+
 
 
 

@@ -7,7 +7,7 @@ import {
     getStudentById, 
     getQuizStatsForSchool, 
     addNewStudent
-} from "../controllers/schools/students.js";
+} from "../controllers/schools/schoolsStudents.js";
 import { 
     updateSchoolProfile, 
     updateSchoolEmail, 

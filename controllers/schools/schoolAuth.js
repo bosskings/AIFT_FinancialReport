@@ -94,7 +94,7 @@ const login = async(req, res) => {
                 schoolId: school._id,
                 accessId: school.accessId,
                 email: school.email,
-                type: "SCHOOL"
+                userType: "SCHOOL"
             },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }

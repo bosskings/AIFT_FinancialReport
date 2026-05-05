@@ -17,14 +17,14 @@ const requireAuth = async (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+        
         const { userType } = decoded;
         let user = null;
 
         if (userType && userType.includes('FINANCE')) {
             user = await User.findById(decoded.userId);
 
-        } else if (userType && userType.includes('STUDENTS')) {
+        } else if (userType && userType.includes('STUDENT')) {
             user = await Students.findById(decoded.studentId);
         
         } else if (userType && userType.includes('SCHOOL')) {

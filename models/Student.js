@@ -12,8 +12,9 @@ const studentSchema = new mongoose.Schema({
     min: 0
   },
   grade: {
-    type: String,
-    required: true
+    type: Number,
+    required: true,
+    default:5
   },
   enrolled: {
     type: Boolean,
@@ -46,6 +47,11 @@ const studentSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  password:{
+    type:String,
+    required:true
+  },
+  
   updatedAt: {
     type: Date,
     default: Date.now

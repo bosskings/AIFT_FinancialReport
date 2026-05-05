@@ -1,5 +1,6 @@
 import Student from '../../models/Student.js';
 import Course from '../../models/Course.js';
+import bcrypt from 'bcryptjs';
 
 const studentsOverview = async (req, res) => {
     try {
@@ -68,4 +69,97 @@ const studentsOverview = async (req, res) => {
     }
 };
 
-export default studentsOverview;
+
+
+// Allow student to update their name and password. 
+// For password change, require current password for verification.
+const updateStudentProfile = async (req, res) => {
+    try {
+        const studentId = req.user && req.user._id || req.user; // supports both object and string
+        const { name, currentPassword, newPassword } = req.body;
+
+        if (!studentId) {
+            return res.status(401).json({
+                status: "FAILED",
+                message: "Unauthorized: Student ID not found."
+            });
+        }
+
+        // Fetch student
+        const student = await Student.findById(studentId);
+        if (!student) {
+            return res.status(404).json({
+                status: "FAILED",
+                message: "Student not found."
+            });
+        }
+
+        // Flag to check if anything was updated
+        let updated = false;
+        let messages = [];
+
+        // Update name (if provided)
+        if (typeof name === "string" && name.trim() && name.trim() !== student.name) {
+            student.name = name.trim();
+            updated = true;
+            messages.push('Name updated');
+        }
+
+        // Update password if requested
+        if (newPassword) {
+            if (!currentPassword) {
+                return res.status(400).json({
+                    status: "FAILED",
+                    message: "Current password is required to update password."
+                });
+            }
+            // Verify current password
+            const match = await bcrypt.compare(currentPassword, student.password);
+            if (!match) {
+                return res.status(400).json({
+                    status: "FAILED",
+                    message: "Current password is incorrect."
+                });
+            }
+            if (newPassword.length < 6) {
+                return res.status(400).json({
+                    status: "FAILED",
+                    message: "New password must be at least 6 characters."
+                });
+            }
+            // Hash and set new password
+            const hashed = await bcrypt.hash(newPassword, 10);
+            student.password = hashed;
+            updated = true;
+            messages.push('Password updated');
+        }
+
+        if (!updated) {
+            return res.status(400).json({
+                status: "FAILED",
+                message: "No changes detected."
+            });
+        }
+
+        student.updatedAt = new Date();
+        await student.save();
+
+        res.status(200).json({
+            status: "SUCCESS",
+            message: messages.join(' and ') + '.',
+            student: {
+                _id: student._id,
+                name: student.name
+                // Do not send back password!
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: "FAILED",
+            message: "An error occurred while updating student profile.",
+            error: error.message
+        });
+    }
+};
+
+export { updateStudentProfile,studentsOverview };
