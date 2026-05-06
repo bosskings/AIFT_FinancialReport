@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import sendEmail from '../../utils/sendEmail.js';
 import School from '../../models/School.js';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
@@ -7,15 +7,17 @@ import sharp from "sharp";
 
 const updateSchoolProfile = async (req, res) => {
     try {
-        // Get schoolId from req (e.g., set in middleware/authentication)
-        const schoolId = req.schoolId;
+        // Get schoolId from req.user, according to authMiddleware
+        const schoolId = req.user && (req.user._id || req.user.id);
+        if (!schoolId) {
+            return res.status(401).json({
+                status: "FAILED",
+                message: "School ID not found in request user context."
+            });
+        }
         // Everything else from req.body
         const updateFields = { ...req.body };
-
-        if (!schoolId) {
-            return res.status(400).json({ error: 'schoolId is required.' });
-        }
-
+    
         // Prevent users from attempting to update email or password via this endpoint
         if ('email' in updateFields || 'password' in updateFields) {
             return res.status(400).json({ 
@@ -80,67 +82,84 @@ const updateSchoolProfile = async (req, res) => {
 
 
 // Helper function to generate a random 6-digit code as a string with leading zeros if necessary
-const sendAndUpdateAuthCode = async (schoolId) => {
+const sendAndUpdateAuthCode = async (req, res) => {
+    // Get schoolId from req.user, per auth middleware
+    const schoolId = req.user && (req.user._id || req.user.id);
+    if (!schoolId) {
+        return res.status(401).json({
+            status: "FAILED",
+            message: "School ID not found in request user context."
+        });
+    }
     // Generate the 6 digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Find the school's email
     const school = await School.findById(schoolId).lean();
     if (!school || !school.email) {
-        throw new Error('School not found or missing email.');
+        return res.status(404).json({
+            status: "FAILED",
+            message: "School not found or missing email."
+        });
     }
 
-    // Send email with code
-    const transporter = nodemailer.createTransport({
-        // Configure your transporter accordingly
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-        }
-    });
-
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: school.email,
-        subject: 'Your School Authentication Code',
-        text: `Your authentication code is: ${code}`
-    };
-
-    await transporter.sendMail(mailOptions);
+    // Send email with code using standard sendEmail utility
+    const emailSubject = 'Your School Authentication Code';
+    const emailHtml = `
+        <div style="background-color:#f6faff;padding:24px;font-family:Arial,sans-serif;border-radius:8px;">
+            <div style="background:#fff;padding:24px;border-radius:8px;box-shadow:0 2px 8px rgba(30,144,255,0.12);text-align:center;">
+                <h2 style="color:#1E90FF;">Authentication Code</h2>
+                <p style="font-size:18px;color:#222;">Your Wintrice authentication code is:</p>
+                <div style="font-size:36px;margin:24px 0;color:#1E90FF;font-weight:bold;letter-spacing:8px;">${code}</div>
+                <p style="color:#444;">Enter this code to verify your email update request.<br/>If you did not make this request, please ignore this email.</p>
+            </div>
+        </div>
+    `;
+    await sendEmail(school.email, emailSubject, emailHtml);
 
     // Update the school authCode in DB
     await School.findByIdAndUpdate(schoolId, { $set: { authCode: code } });
 
-    return code;
+    return res.status(200).json({
+        status: "SUCCESS",
+        message: "Authentication code sent to school email.",
+        code: code
+    });
 };
 
 
 
 const updateSchoolEmail = async (req, res) => {
     try {
-        const schoolId = req.schoolId;
+        // Get schoolId from req.user, per auth middleware
+        const schoolId = req.user && (req.user._id || req.user.id);
+        if (!schoolId) {
+            return res.status(401).json({
+                status: "FAILED",
+                message: "School ID not found in request user context."
+            });
+        }
         const { newEmail, authCode } = req.body;
 
         // Validate input
         if (!newEmail || !authCode) {
-            return res.status(400).json({ error: "Missing required fields: newEmail and authCode are required." });
+            return res.status(400).json({ status: "FAILED", message: "Missing required fields: newEmail and authCode are required." });
         }
 
         // Get the current school from DB
         const school = await School.findById(schoolId);
         if (!school) {
-            return res.status(404).json({ error: "School not found." });
+            return res.status(404).json({ status: "FAILED", message: "School not found." });
         }
 
         // Check if an auth code has been sent and is pending verification
         if (school.authCode === "000000") {
-            return res.status(400).json({ error: "No verification has been initiated for email update (auth code not set)." });
+            return res.status(400).json({ status: "FAILED", message: "No verification has been initiated for email update (auth code not set)." });
         }
 
         // Check the provided auth code matches the one stored
         if (school.authCode !== authCode) {
-            return res.status(401).json({ error: "Invalid authentication code." });
+            return res.status(401).json({ status: "FAILED", message: "Invalid authentication code." });
         }
 
         // Update email only
@@ -159,7 +178,13 @@ const updateSchoolEmail = async (req, res) => {
 
 const updateSchoolPassword = async (req, res) => {
     try {
-        const schoolId = req.schoolId;
+        // Get schoolId from req.user, per auth middleware
+        const schoolId = req.user && (req.user._id || req.user.id);
+        if (!schoolId) {
+            return res.status(401).json({
+                error: "School ID not found in request user context."
+            });
+        }
         const { newPassword, authCode } = req.body;
 
         // Validate input
@@ -200,6 +225,7 @@ const updateSchoolPassword = async (req, res) => {
 
 export {
     updateSchoolProfile,
+    sendAndUpdateAuthCode,
     updateSchoolEmail,
     updateSchoolPassword
 }

@@ -6,10 +6,15 @@ const studentSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  age: {
-    type: Number,
+  dob: {
+    type: Date,
+    required: true
+  },
+  email: {
+    type: String,
     required: true,
-    min: 0
+    unique: true,
+    match: [/\S+@\S+\.\S+/, "Please enter a valid email address"]
   },
   grade: {
     type: Number,
@@ -24,6 +29,33 @@ const studentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School'
   },
+
+  quizzes: [
+    {
+      quiz: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Quiz',
+        required: true
+      },
+      dateTaken: {
+        type: Date,
+        required: true
+      },
+      score: {
+        type: Number,
+        required: true
+      },
+      completionTime: {
+        type: Number, // in minutes
+        required: true
+      },
+      result: {
+        type: String,
+        enum: ['PASSED', 'FAILED'],
+        required: true
+      }
+    }
+  ],
 
   courses: [{
     course: {

@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import Quiz from "../../models/Quiz.js";
 import School from '../../models/School.js';
 import Student from '../../models/Student.js';
@@ -96,6 +97,8 @@ const addNewStudent = async (req, res) => {
 
         // Generate password
         const password = generateRandomPassword();
+        // Encrypt password with bcrypt
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create student
         const student = new Student({
@@ -103,7 +106,7 @@ const addNewStudent = async (req, res) => {
             grade,
             name,
             age,
-            password,
+            password: hashedPassword,
             school: schoolId,
             status: 'ACTIVE'
         });
@@ -124,7 +127,8 @@ const addNewStudent = async (req, res) => {
                         <strong>Your Login Details:</strong>
                     </p>
                     <div style="font-size: 18px; color: #1E90FF; background: #f6faff; border-radius: 4px; padding: 12px; display: inline-block;">
-                        Email: <strong>${email}</strong><br/>
+                        Email: <strong style="word-break: break-all;">${email}</strong><br/>
+                   
                         Password: <strong>${password}</strong>
                     </div>
                     <p style="margin: 24px 0 0 0; color: #1E90FF;">
@@ -290,6 +294,70 @@ const getQuizStatsForSchool = async (req, res) => {
 };
 
 
+/**
+ * Allows a school to update a student's details (name, grade, age, status, etc.)
+ * Only the school that owns the student is authorized.
+ * 
+ * Expects:
+ *   - req.params.id: the studentId
+ *   - req.body: the fields to update (name, grade, age, status, etc.)
+ */
+const updateStudent = async (req, res) => {
+    try {
+        const schoolId = req.schoolId;
+        const { id: studentId } = req.params;
+        const allowedFields = ["name", "grade", "dob", "status", "enrolled"];
+
+        // Fetch student and check school ownership
+        const student = await Student.findOne({ _id: studentId, school: schoolId });
+        if (!student) {
+            return res.status(404).json({
+                status: "FAILED",
+                message: "Student not found or not part of your school."
+            });
+        }
+
+        let updated = false;
+        allowedFields.forEach(field => {
+            if (Object.prototype.hasOwnProperty.call(req.body, field) && req.body[field] != null) {
+                student[field] = req.body[field];
+                updated = true;
+            }
+        });
+
+        if (!updated) {
+            return res.status(400).json({
+                status: "FAILED",
+                message: "No valid fields provided for update."
+            });
+        }
+
+        student.updatedAt = new Date();
+        await student.save();
+
+        res.status(200).json({
+            status: "SUCCESS",
+            message: "Student details updated.",
+            student: {
+                _id: student._id,
+                name: student.name,
+                grade: student.grade,
+                age: student.age,
+                status: student.status,
+                enrolled: student.enrolled,
+                email: student.email
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: "FAILED",
+            message: "An error occurred while updating student.",
+            error: error.message
+        });
+    }
+};
+
+
 
 
 export {
@@ -297,5 +365,6 @@ export {
     getAllStudents,
     addNewStudent,
     getStudentById,
-    getQuizStatsForSchool
+    getQuizStatsForSchool,
+    updateStudent
 }

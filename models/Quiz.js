@@ -13,6 +13,12 @@ const quizSchema = new mongoose.Schema({
         default:30
     },
     
+    grade: {
+        type: Number,
+        required: true,
+        enum: [1, 2, 3, 4, 5, 6],
+    },
+
     questions: [
         {
             question: {

@@ -1,7 +1,9 @@
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import Students from '../../models/Student.js';
 
-export const studentsLogin = async (req, res) => {
+
+const studentsLogin = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -21,9 +23,9 @@ export const studentsLogin = async (req, res) => {
             });
         }
 
-        // Compare plain passwords (for this example, assuming password is stored as plain text)
-        // In production, compare hashed passwords using bcrypt
-        if (student.password !== password) {
+        // Compare passwords using bcrypt
+        const isMatch = await bcrypt.compare(password, student.password);
+        if (!isMatch) {
             return res.status(401).json({
                 status: "FAILED",
                 message: "Invalid email or password"
@@ -45,7 +47,8 @@ export const studentsLogin = async (req, res) => {
         return res.status(200).json({
             status: "SUCCESS",
             message: "Student logged in successfully",
-            token
+            token,
+            student
         });
 
     } catch (error) {
@@ -57,3 +60,4 @@ export const studentsLogin = async (req, res) => {
     }
 };
 
+export { studentsLogin };

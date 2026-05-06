@@ -1,4 +1,45 @@
 import Quiz from '../../models/Quiz.js';
+import Student from '../../models/Student.js';
+
+/**
+ * Get all quizzes available for the logged-in student's grade.
+ * Assumes req.user is set by auth middleware and contains a "grade" property.
+ */
+const getQuizzes = async (req, res) => {
+    try {
+        const student = req.user;
+        if (!student || typeof student.grade === "undefined") {
+            return res.status(400).json({
+                status: "FAILED",
+                message: "Student grade not available."
+            });
+        }
+
+        const gradeLevel = student.grade;
+
+        // Find quizzes that match this grade
+        const quizzes = await Quiz.find({ grade: gradeLevel })
+            .sort({ dateWritten: -1 })
+            .lean();
+
+        res.status(200).json({
+            status: "SUCCESS",
+            quizzes: quizzes.map(q => ({
+                id: q._id,
+                title: q.title,
+                timeInMinutes: q.timeInMinutes,
+                numQuestions: q.questions.length,
+                dateWritten: q.dateWritten
+            }))
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: "FAILED",
+            message: "An error occurred while fetching quizzes for grade.",
+            error: error.message
+        });
+    }
+};
 
 const quizIntro = async (req, res) => {
     try {
@@ -77,7 +118,95 @@ const quizQuestions = async (req, res) => {
 };
 
 
+const quizResults = async (req, res) => {
+    try {
+        const quizId = req.params.id;
+        if (!quizId) {
+            return res.status(400).json({
+                status: "FAILED",
+                message: "Quiz ID not provided."
+            });
+        }
+
+        const quiz = await Quiz.findById(quizId).lean();
+        if (!quiz) {
+            return res.status(404).json({
+                status: "FAILED",
+                message: "Quiz not found."
+            });
+        }
+
+        const student = req.user;
+        if (!student) {
+            return res.status(400).json({
+                status: "FAILED",
+                message: "Student not found."
+            });
+        }
+
+        // Save quiz result using embedded quiz subdocument on the student schema
+        const { score, completionTime } = req.body;
+        let result = req.body.result;
+
+        // Determine pass/fail if not provided
+        if (!result) {
+            // For demonstration: passing is 50% or above. Can adjust as per business rules.
+            const totalQuestions = quiz.questions.length;
+            result = (score / totalQuestions) >= 0.5 ? 'PASSED' : 'FAILED';
+        }
+
+        // Add or update the quiz entry in the student's quizzes array
+        const updatedStudent = await Student.findOneAndUpdate(
+            { _id: student._id, "quizzes.quiz": { $ne: quizId } },
+            {
+                $push: {
+                    quizzes: {
+                        quiz: quiz._id,
+                        dateTaken: new Date(),
+                        score,
+                        completionTime,
+                        result
+                    }
+                }
+            },
+            { new: true }
+        ).lean();
+
+        // If already exists, update existing quiz result
+        let quizResult;
+        if (!updatedStudent) {
+            quizResult = await Student.findOneAndUpdate(
+                { _id: student._id, "quizzes.quiz": quizId },
+                {
+                    $set: {
+                        "quizzes.$.dateTaken": new Date(),
+                        "quizzes.$.score": score,
+                        "quizzes.$.completionTime": completionTime,
+                        "quizzes.$.result": result
+                    }
+                },
+                { new: true }
+            ).lean();
+        } else {
+            quizResult = updatedStudent;
+        }
+
+        res.status(200).json({
+            status: "SUCCESS",
+            quizResult: quizResult
+        });
+    } catch (error) {
+        res.status(500).json({
+            status: "FAILED",
+            message: "An error occurred while submitting quiz results.",
+            error: error.message
+        });
+    }
+};
+
 export {
+    getQuizzes,
     quizIntro,
-    quizQuestions
+    quizQuestions,
+    quizResults
 }

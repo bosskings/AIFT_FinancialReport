@@ -7,12 +7,14 @@ import {
     getAllStudents, 
     getStudentById, 
     getQuizStatsForSchool, 
-    addNewStudent
+    addNewStudent,
+    updateStudent
 } from "../controllers/schools/schoolsStudents.js";
 import { 
     updateSchoolProfile, 
     updateSchoolEmail, 
-    updateSchoolPassword 
+    updateSchoolPassword, 
+    sendAndUpdateAuthCode
 } from "../controllers/schools/schoolSettings.js";
 
 
@@ -33,12 +35,14 @@ schoolsRouter.get('/overview', schoolOverview);
 schoolsRouter.get('/students', getAllStudents);
 schoolsRouter.post('/students', addNewStudent)
 schoolsRouter.get('/students/:id', getStudentById);
+schoolsRouter.put('/students/:id', updateStudent);
 
 // Quizzes endpoints
 schoolsRouter.get('/quizzes/stats', getQuizStatsForSchool);
 
 // School profile/settings endpoints
 schoolsRouter.put('/profile', upload.single('image'), updateSchoolProfile);
+schoolsRouter.post('/profile/email/auth-code', sendAndUpdateAuthCode);
 schoolsRouter.put('/profile/email', updateSchoolEmail);
 schoolsRouter.put('/profile/password', updateSchoolPassword);
 
