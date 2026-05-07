@@ -660,18 +660,49 @@ function financialReportJSON(formData) {
  * Controller for Express endpoint: streams custom WINTRICE PDF report.
  * For demonstration purposes, does not take actual user data input.
  */
+// async function generateReport(req, res) {
+//   try {
+//     res.setHeader('Content-Type', 'application/pdf');
+//     res.setHeader('Content-Disposition', 'attachment; filename=WINTRICE_Financial_Blueprint.pdf');
+
+//     const pdfStream = generateFinancialReportPDF(req.body);
+//     pdfStream.pipe(res);
+//   } catch (error) {
+//     console.error('Error generating financial report:', error);
+//     res.status(500).json({
+//       status: "FAILED",
+//       message: 'Internal server error while generating financial report'+error.message
+//     });
+//   }
+// }
+
+
 async function generateReport(req, res) {
+  const puppeteer = await import('puppeteer');
+
   try {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=WINTRICE_Financial_Blueprint.pdf');
 
-    const pdfStream = generateFinancialReportPDF(req.body);
-    pdfStream.pipe(res);
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    // Replace with the actual URL that renders the report for this session or pass data as needed
+    await page.goto("https://aift-financial-report-fe.vercel.app/", { waitUntil: "networkidle0" });
+
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+    });
+
+    await browser.close();
+
+    res.end(pdfBuffer);
   } catch (error) {
     console.error('Error generating financial report:', error);
     res.status(500).json({
       status: "FAILED",
-      message: 'Internal server error while generating financial report'+error.message
+      message: 'Internal server error while generating financial report: ' + error.message
     });
   }
 }
